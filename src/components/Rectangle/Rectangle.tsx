@@ -69,6 +69,8 @@ const Rectangle = () => {
   };
 
   useEffect(() => {
+    scene.clear()
+    
     // Create the renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
