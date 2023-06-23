@@ -6,6 +6,7 @@ const Rectangle = () => {
 
   const boxRef = useRef<THREE.Mesh | null>(null);
   const divRef = useRef<HTMLDivElement | null>(null);
+  const rectRef = useRef<THREE.Mesh | null>(null);
 
   let isDragging = false;
   let previousMousePosition = { x: 0, y: 0 };
@@ -71,9 +72,24 @@ const Rectangle = () => {
     // Create the box mesh
     const boxMesh = new THREE.Mesh(geometry, material);
     boxRef.current = boxMesh;
+    
 
     // Add the box mesh to the scene
     scene.add(boxMesh);
+
+     // Create the rectangle geometry
+     const rectGeometry = new THREE.PlaneGeometry(2, 1.5);
+
+     // Create the rectangle material
+     const rectMaterial = new THREE.MeshBasicMaterial({ color: 0x964B00 });
+ 
+     // Create the rectangle mesh
+     const rectMesh = new THREE.Mesh(rectGeometry, rectMaterial);
+     rectMesh.position.set(0, 0, -2); // Adjust the position to be behind the box
+     rectRef.current = rectMesh;
+ 
+     // Add the rectangle mesh to the scene
+     scene.add(rectMesh);
 
     // Animation loop
     const animate = () => {
