@@ -3,6 +3,7 @@ import logo from "./logo.svg";
 import "./App.css";
 import * as THREE from "three";
 import Modal from "react-modal";
+import Dialog from "./components/Dialog/Dialog";
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,7 +179,7 @@ function App() {
     return () => {
       divRef.current?.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [isModalOpen]);
 
   return (
     <div
