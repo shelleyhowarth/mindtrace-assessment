@@ -2,8 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import * as THREE from "three";
+import Modal from "react-modal";
 
 function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [rectangleWidth, setRectangleWidth] = useState(0);
+  const [rectangleHeight, setRectangleHeight] = useState(0);
+
   const rectangleRef = useRef<THREE.Mesh | null>(null);
   const circleRef = useRef<THREE.Mesh | null>(null);
   const sidePanelRef = useRef<THREE.Mesh | null>(null);
@@ -70,11 +75,40 @@ function App() {
   };
 
   const handlePointerUp = (event: any) => {
+    if (
+      draggedObject &&
+      (draggedObject as THREE.Mesh).userData?.shape === "rectangle"
+    ) {
+      setIsModalOpen(true);
+    }
+
     event.stopPropagation();
     isDragging = false;
     draggedObject = null;
     document.removeEventListener("pointermove", handlePointerMove);
     document.removeEventListener("pointerup", handlePointerUp);
+  };
+
+  const handleSubmitDimensions = () => {
+    // Perform validation on the entered dimensions if needed
+    const isValidWidth = rectangleWidth % 5 === 0 && rectangleWidth >= 10 && rectangleWidth <= 70;
+    const isValidHeight = rectangleHeight % 5 === 0 && rectangleHeight >= 10 && rectangleHeight <= 70;
+  
+    if (!isValidWidth || !isValidHeight) {
+      console.log("Invalid dimensions. Please enter values divisible by 5 and between 10 and 70 (inclusive).");
+      return;
+    }
+
+    // Store the rectangle dimensions in state or perform any other desired action
+    console.log("Rectangle Width:", rectangleWidth);
+    console.log("Rectangle Height:", rectangleHeight);
+
+    // Close the modal
+    setIsModalOpen(false);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   useEffect(() => {
@@ -106,6 +140,7 @@ function App() {
     rectangleMesh.position.set(-10, -5, -10); // Adjust the position to be behind the box
     rectangleRef.current = rectangleMesh;
     rectangleMesh.userData.draggable = true;
+    rectangleMesh.userData.shape = "rectangle";
 
     // Create the circle mesh
     const circleMesh = new THREE.Mesh(circleGeometry, circleMaterial);
@@ -150,7 +185,30 @@ function App() {
       ref={divRef}
       style={{ width: "100vw", height: "100vh", position: "absolute" }}
       onPointerDown={handlePointerDown}
-    />
+    >
+      <Modal isOpen={isModalOpen} onRequestClose={handleCloseModal}>
+        <h2>Enter Rectangle Dimensions</h2>
+        <label>
+          Width:
+          <input
+            type="number"
+            value={rectangleWidth}
+            onChange={(e) => setRectangleWidth(parseInt(e.target.value))}
+          />
+        </label>
+        <br />
+        <label>
+          Height:
+          <input
+            type="number"
+            value={rectangleHeight}
+            onChange={(e) => setRectangleHeight(parseInt(e.target.value))}
+          />
+        </label>
+        <br />
+        <button onClick={handleSubmitDimensions}>Submit</button>
+      </Modal>
+    </div>
   );
 }
 
