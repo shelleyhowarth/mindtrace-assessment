@@ -1,62 +1,34 @@
 import React, { useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import { useDrag, useGesture } from "react-use-gesture";
+import { useSpring, a } from "@react-spring/three";
+
 import "./App.css";
 
 function App() {
-  const sidePanelRef = useRef<THREE.Mesh | null>(null);
-  const mainPanelRef = useRef<THREE.Mesh | null>(null);
-  const rectangleRef = useRef<THREE.Mesh | null>(null);
-  const circleRef = useRef<THREE.Mesh | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null); // Ref for the canvas element
-
-  const [isDragging, setDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    setDragging(true);
-
-    const { clientX, clientY } = e;
-    const canvasBounds = canvasRef.current?.getBoundingClientRect(); // Access the canvas bounds using the ref
-    if (canvasBounds) {
-      const offsetX = (clientX - canvasBounds.left) / canvasBounds.width * 2 - 1;
-      const offsetY = (clientY - canvasBounds.top) / canvasBounds.height * -2 + 1;
-      setOffset({ x: offsetX, y: offsetY });
-    }
-  };
-
-  const handlePointerMove = (e: any) => {
-    if (isDragging) {
-      e.stopPropagation();
-      const { clientX, clientY } = e;
-      const canvasBounds = canvasRef.current?.getBoundingClientRect(); // Access the canvas bounds using the ref
-      if (canvasBounds) {
-        const offsetX = (clientX - canvasBounds.left) / canvasBounds.width * 2 - 1;
-        const offsetY = (clientY - canvasBounds.top) / canvasBounds.height * -2 + 1;
-        setOffset({ x: offsetX, y: offsetY });
-      }
-    }
-  };
-
-  const handlePointerUp = () => {
-    setDragging(false);
-  };
+  const sidePanelRef = useRef(null);
+  const mainPanelRef = useRef(null);
+  const rectangleRef = useRef(null);
+  const circleRef = useRef(null);
+  const canvasRef = useRef(null); // Ref for the canvas element
 
   const Circle = () => {
-    useFrame(() => {
-      if (circleRef.current) {
-        circleRef.current.position.set(-6, 2, 0); // Adjust the position here
-      }
+    const { size, viewport } = useThree();
+    const aspect = size.width / viewport.width;
+    const [position, setPosition] = useState([-6, 2, 0]); // Declare position state here
+
+    const bind = useDrag(({ offset: [x, y] }) => {
+      setPosition([x / aspect, -y / aspect, 0]);
     });
 
     return (
       <mesh
+        position={position}
+        {...bind()}
         ref={circleRef}
         onClick={(e) => console.log("click")}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
       >
         <circleGeometry attach="geometry" args={[0.75, 32]} />
         <meshBasicMaterial attach="material" color="blue" />
@@ -65,19 +37,20 @@ function App() {
   };
 
   const Rectangle = () => {
-    useFrame(() => {
-      if (rectangleRef.current) {
-        rectangleRef.current.position.set(-6, 0, 0); // Adjust the position here
-      }
+    const { size, viewport } = useThree();
+    const aspect = size.width / viewport.width;
+    const [position, setPosition] = useState([-6, 0, 0]); // Declare position state here
+
+    const bind = useDrag(({ offset: [x, y] }) => {
+      setPosition([x / aspect, -y / aspect, 0]);
     });
 
     return (
       <mesh
+        position={position}
+        {...bind()}
         ref={rectangleRef}
         onClick={(e) => console.log("click")}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
       >
         <planeGeometry attach="geometry" args={[1.5, 1.0]} />
         <meshBasicMaterial attach="material" color="red" />
