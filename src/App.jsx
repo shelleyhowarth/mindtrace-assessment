@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useDrag } from "react-use-gesture";
 import Modal from "react-modal";
@@ -10,12 +10,12 @@ function App() {
   const mainPanelRef = useRef(null);
   const rectangleRef = useRef(null);
   const circleRef = useRef(null);
-  const canvasRef = useRef(null); // Ref for the canvas element
+  const canvasRef = useRef(null);
   const [showModal, setShowModal] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [error, setError] = useState("");
   const [rectangles, setRectangles] = useState([]);
-  const [rectanglePosition, setRectanglePosition] = useState([-5.5, 0, 0]); // Declare position state here
+  const positionRef = useRef([-5.5, 0, 0]);
 
   const handleDimensionSubmit = () => {
     const { width, height } = dimensions;
@@ -23,20 +23,19 @@ function App() {
     const parsedHeight = parseInt(height, 10);
 
     inputValidation(parsedWidth, parsedHeight);
-    console.log(setError);
+
     if (error === "") {
       const newRectangle = {
         width: parsedWidth / 10,
         height: parsedHeight / 10,
-        position: rectanglePosition,
+        position: positionRef.current,
       };
 
       setRectangles((prevRectangles) => [...prevRectangles, newRectangle]);
-      setRectanglePosition([-5.5, 0, 0]);
+      positionRef.current = [-5.5, 0, 0];
       setDimensions({ width: 0, height: 0 });
       setShowModal(false);
       setError("");
-      console.log("Dimensions:", rectangles);
     }
   };
 
@@ -55,7 +54,7 @@ function App() {
   const Circle = () => {
     const { size, viewport } = useThree();
     const aspect = size.width / viewport.width;
-    const [position, setPosition] = useState([-4.5, 2, 1]); // Declare position state here
+    const [position, setPosition] = useState([-4.5, 2, 1]);
 
     const bind = useDrag(({ offset: [x, y] }) => {
       setPosition([x / aspect, -y / aspect, 1]);
@@ -86,19 +85,26 @@ function App() {
   const Rectangle = () => {
     const { size, viewport } = useThree();
     const aspect = size.width / viewport.width;
-    const [rectanglePosition, setRectanglePosition] = useState([-5.5, 0, 0]); // Declare position state here
 
     const bind = useDrag(({ offset: [x, y] }) => {
-      setRectanglePosition([x / aspect, -y / aspect, 0]);
-      console.log(rectanglePosition);
+      const newPosition = [x / aspect, -y / aspect, 0];
+      positionRef.current = newPosition;
+    });
+
+    useFrame(() => {
+      if (rectangleRef.current) {
+        rectangleRef.current.position.set(...positionRef.current);
+      }
     });
 
     return (
       <mesh
-        position={rectanglePosition}
+        position={positionRef.current}
         {...bind()}
         ref={rectangleRef}
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          setShowModal(true);
+        }}
       >
         <planeGeometry attach="geometry" args={[1.5, 1.0]} />
         <meshBasicMaterial attach="material" color="red" />
@@ -109,16 +115,11 @@ function App() {
   const SidePanel = () => {
     useFrame(() => {
       if (sidePanelRef.current) {
-        sidePanelRef.current.position.set(-8, 0, -2); // Adjust the position here
+        sidePanelRef.current.position.set(-8, 0, -2);
       }
     });
     return (
-      <mesh
-        ref={sidePanelRef}
-        onClick={(e) => console.log("click")}
-        onPointerOver={(e) => console.log("hover")}
-        onPointerOut={(e) => console.log("unhover")}
-      >
+      <mesh ref={sidePanelRef}>
         <planeGeometry attach="geometry" args={[3.5, 15]} />
         <meshBasicMaterial attach="material" color="gray" />
       </mesh>
@@ -128,16 +129,11 @@ function App() {
   const MainPanel = () => {
     useFrame(() => {
       if (mainPanelRef.current) {
-        mainPanelRef.current.position.set(2, 0, -2); // Adjust the position here
+        mainPanelRef.current.position.set(2, 0, -2);
       }
     });
     return (
-      <mesh
-        ref={mainPanelRef}
-        onClick={(e) => console.log("click")}
-        onPointerOver={(e) => console.log("hover")}
-        onPointerOut={(e) => console.log("unhover")}
-      >
+      <mesh ref={mainPanelRef}>
         <planeGeometry attach="geometry" args={[15.0, 15]} />
         <meshBasicMaterial attach="material" color="gray" />
       </mesh>
@@ -156,6 +152,7 @@ function App() {
             key={index}
             width={rectangle.width}
             height={rectangle.height}
+            position={rectangle.position}
           />
         ))}
       </Canvas>
