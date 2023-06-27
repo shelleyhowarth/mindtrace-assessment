@@ -1,156 +1,137 @@
-import React, { useState, useEffect, useRef } from "react";
-import logo from "./logo.svg";
+import React, { useRef, useState } from "react";
+import ReactDOM from "react-dom";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import "./App.css";
-import * as THREE from "three";
 
 function App() {
-  const rectangleRef = useRef<THREE.Mesh | null>(null);
-  const circleRef = useRef<THREE.Mesh | null>(null);
   const sidePanelRef = useRef<THREE.Mesh | null>(null);
   const mainPanelRef = useRef<THREE.Mesh | null>(null);
+  const rectangleRef = useRef<THREE.Mesh | null>(null);
+  const circleRef = useRef<THREE.Mesh | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null); // Ref for the canvas element
 
-  const divRef = useRef<HTMLDivElement | null>(null);
+  const [isDragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  let isDragging = false;
-  let previousMousePosition = { x: 0, y: 0 };
-  let draggedObject: THREE.Mesh | null = null;
-  const raycaster = new THREE.Raycaster();
-  const scene = new THREE.Scene();
+  const handlePointerDown = (e: any) => {
+    e.stopPropagation();
+    setDragging(true);
 
-  // Create the camera
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
+    const { clientX, clientY } = e;
+    const canvasBounds = canvasRef.current?.getBoundingClientRect(); // Access the canvas bounds using the ref
+    if (canvasBounds) {
+      const offsetX = (clientX - canvasBounds.left) / canvasBounds.width * 2 - 1;
+      const offsetY = (clientY - canvasBounds.top) / canvasBounds.height * -2 + 1;
+      setOffset({ x: offsetX, y: offsetY });
+    }
+  };
 
-  const handlePointerDown = (event: any) => {
-    event.stopPropagation();
-
-    const mouse = new THREE.Vector2(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1
-    );
-
-    raycaster.setFromCamera(mouse, camera);
-
-    const intersects = raycaster.intersectObjects(scene.children);
-
-    if (intersects.length > 0) {
-      const targetMesh = intersects[0].object as THREE.Mesh;
-
-      if (targetMesh.userData.draggable) {
-        isDragging = true;
-        draggedObject = targetMesh;
-        previousMousePosition = {
-          x: event.clientX,
-          y: event.clientY,
-        };
-        document.addEventListener("pointermove", handlePointerMove);
-        document.addEventListener("pointerup", handlePointerUp);
+  const handlePointerMove = (e: any) => {
+    if (isDragging) {
+      e.stopPropagation();
+      const { clientX, clientY } = e;
+      const canvasBounds = canvasRef.current?.getBoundingClientRect(); // Access the canvas bounds using the ref
+      if (canvasBounds) {
+        const offsetX = (clientX - canvasBounds.left) / canvasBounds.width * 2 - 1;
+        const offsetY = (clientY - canvasBounds.top) / canvasBounds.height * -2 + 1;
+        setOffset({ x: offsetX, y: offsetY });
       }
     }
   };
 
-  const handlePointerMove = (event: any) => {
-    event.stopPropagation();
-    if (isDragging && draggedObject) {
-      const delta = {
-        x: event.clientX - previousMousePosition.x,
-        y: event.clientY - previousMousePosition.y,
-      };
-      draggedObject.position.x += delta.x / 50;
-      draggedObject.position.y -= delta.y / 50;
-      previousMousePosition = {
-        x: event.clientX,
-        y: event.clientY,
-      };
-    }
+  const handlePointerUp = () => {
+    setDragging(false);
   };
 
-  const handlePointerUp = (event: any) => {
-    event.stopPropagation();
-    isDragging = false;
-    draggedObject = null;
-    document.removeEventListener("pointermove", handlePointerMove);
-    document.removeEventListener("pointerup", handlePointerUp);
+  const Circle = () => {
+    useFrame(() => {
+      if (circleRef.current) {
+        circleRef.current.position.set(-6, 2, 0); // Adjust the position here
+      }
+    });
+
+    return (
+      <mesh
+        ref={circleRef}
+        onClick={(e) => console.log("click")}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        <circleGeometry attach="geometry" args={[0.75, 32]} />
+        <meshBasicMaterial attach="material" color="blue" />
+      </mesh>
+    );
   };
 
-  useEffect(() => {
-    scene.clear();
+  const Rectangle = () => {
+    useFrame(() => {
+      if (rectangleRef.current) {
+        rectangleRef.current.position.set(-6, 0, 0); // Adjust the position here
+      }
+    });
 
-    // Create the renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    divRef.current?.appendChild(renderer.domElement);
+    return (
+      <mesh
+        ref={rectangleRef}
+        onClick={(e) => console.log("click")}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        <planeGeometry attach="geometry" args={[1.5, 1.0]} />
+        <meshBasicMaterial attach="material" color="red" />
+      </mesh>
+    );
+  };
 
-    // Create the side panel geometry
-    const sidePanelGeometry = new THREE.PlaneGeometry(10, 25);
-    const sidePanelMaterial = new THREE.MeshBasicMaterial({ color: 0xcfbfbe });
+  const SidePanel = () => {
+    useFrame(() => {
+      if (sidePanelRef.current) {
+        sidePanelRef.current.position.set(-6, 0, 0); // Adjust the position here
+      }
+    });
+    return (
+      <mesh
+        ref={sidePanelRef}
+        onClick={(e) => console.log("click")}
+        onPointerOver={(e) => console.log("hover")}
+        onPointerOut={(e) => console.log("unhover")}
+      >
+        <planeGeometry attach="geometry" args={[2.0, 10]} />
+        <meshBasicMaterial attach="material" color="gray" />
+      </mesh>
+    );
+  };
 
-    // Create the main panel geometry
-    const mainPanelGeometry = new THREE.PlaneGeometry(30, 30);
-    const mainPaneleMaterial = new THREE.MeshBasicMaterial({ color: 0xeef5fb });
-
-    // Create the rectangle geometry
-    const rectangleGeometry = new THREE.PlaneGeometry(5, 3.5);
-    const rectangleMaterial = new THREE.MeshBasicMaterial({ color: 0x964b00 });
-
-    // Create the circle geometry
-    const circleGeometry = new THREE.CircleGeometry(2.5, 32); //2.5 is the radius
-    const circleMaterial = new THREE.MeshBasicMaterial({ color: 0xcc0000 });
-
-    // Create the rectangle mesh
-    const rectangleMesh = new THREE.Mesh(rectangleGeometry, rectangleMaterial);
-    rectangleMesh.position.set(-10, -5, -10); // Adjust the position to be behind the box
-    rectangleRef.current = rectangleMesh;
-    rectangleMesh.userData.draggable = true;
-
-    // Create the circle mesh
-    const circleMesh = new THREE.Mesh(circleGeometry, circleMaterial);
-    circleMesh.position.set(-10, 5, -10); // Adjust the position to be behind the box
-    circleRef.current = circleMesh;
-    circleMesh.userData.draggable = true;
-
-    // Create the side panel mesh
-    const sidePanelMesh = new THREE.Mesh(sidePanelGeometry, sidePanelMaterial);
-    sidePanelMesh.position.set(-15, 0, -15); // Adjust the position to be behind the box
-    sidePanelRef.current = sidePanelMesh;
-    sidePanelMesh.userData.draggable = false;
-
-    // Create the main panel mesh
-    const mainPanelMesh = new THREE.Mesh(mainPanelGeometry, mainPaneleMaterial);
-    mainPanelMesh.position.set(10, 0, -15); // Adjust the position to be behind the box
-    mainPanelRef.current = mainPanelMesh;
-    mainPanelMesh.userData.draggable = false;
-
-    // Add the shapes to the scene
-    scene.add(rectangleMesh);
-    scene.add(circleMesh);
-    scene.add(sidePanelMesh);
-    scene.add(mainPanelMesh);
-
-    // Animation loop
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Cleanup
-    return () => {
-      divRef.current?.removeChild(renderer.domElement);
-    };
-  }, []);
+  const MainPanel = () => {
+    useFrame(() => {
+      if (mainPanelRef.current) {
+        mainPanelRef.current.position.set(2, 0, 0); // Adjust the position here
+      }
+    });
+    return (
+      <mesh
+        ref={mainPanelRef}
+        onClick={(e) => console.log("click")}
+        onPointerOver={(e) => console.log("hover")}
+        onPointerOut={(e) => console.log("unhover")}
+      >
+        <planeGeometry attach="geometry" args={[11.0, 10]} />
+        <meshBasicMaterial attach="material" color="gray" />
+      </mesh>
+    );
+  };
 
   return (
-    <div
-      ref={divRef}
-      style={{ width: "100vw", height: "100vh", position: "absolute" }}
-      onPointerDown={handlePointerDown}
-    />
+    <div className="canvas-container">
+      <Canvas ref={canvasRef}>
+        <SidePanel />
+        <MainPanel />
+        <Rectangle />
+        <Circle />
+      </Canvas>
+    </div>
   );
 }
 
