@@ -16,7 +16,7 @@ function App() {
   const [circles, setCircles] = useState([]);
   const [rectangles, setRectangles] = useState([]);
 
-  const positionRef = useRef([-5.5, 0, 0]);
+  const rectanglePosRef = useRef([-5.5, 0, 0]);
 
   const handleDimensionSubmit = () => {
     const { width, height } = dimensions;
@@ -26,7 +26,8 @@ function App() {
     inputValidation(parsedWidth, parsedHeight);
 
     if (error === "") {
-      const newPosition = positionRef.current;
+      // Gets the position of the current dragged rectangle and sets it as the position of the new rectangle
+      const newPosition = rectanglePosRef.current;
       const newRectangle = {
         width: parsedWidth / 10,
         height: parsedHeight / 10,
@@ -34,13 +35,17 @@ function App() {
         apples: 0,
       };
 
-      const isOverlapping = rectangles.some(isRectanglesOverlapping(newRectangle));
+      const isOverlapping = rectangles.some(
+        isRectanglesOverlapping(newRectangle)
+      );
 
       if (isOverlapping) {
         setError("The new rectangle overlaps with existing rectangles.");
       } else {
+        // If no errors, add the new rectangle to the Rectangles array
+        // and set the draggable rectangle back to it's starting position
         setRectangles((prevRectangles) => [...prevRectangles, newRectangle]);
-        positionRef.current = [-5.5, 0, 0];
+        rectanglePosRef.current = [-5.5, 0, 0];
         setDimensions({ width: 0, height: 0 });
         setShowModal(false);
         setError("");
@@ -86,10 +91,30 @@ function App() {
   };
 
   const onCircleDrop = (position) => {
+    // Create a new circle with the position of the currently dragged circle
     const newCircle = {
       position: position,
     };
+
     setCircles((prevCircles) => [...prevCircles, newCircle]);
+  };
+
+  const CustomRectangle = ({ width, height, position }) => {
+    return (
+      <mesh position={position}>
+        <planeGeometry attach="geometry" args={[width, height]} />
+        <meshBasicMaterial attach="material" color="red" />
+      </mesh>
+    );
+  };
+
+  const CustomCircle = ({ position }) => {
+    return (
+      <mesh position={position}>
+        <circleGeometry attach="geometry" args={[0.3, 32]} />
+        <meshBasicMaterial attach="material" color="blue" />
+      </mesh>
+    );
   };
 
   const Circle = () => {
@@ -113,26 +138,8 @@ function App() {
         position={position}
         {...bind()}
         ref={circleRef}
-        onClick={(e) => onCircleDrop(position)}
+        onClick={() => onCircleDrop(position)}
       >
-        <circleGeometry attach="geometry" args={[0.3, 32]} />
-        <meshBasicMaterial attach="material" color="blue" />
-      </mesh>
-    );
-  };
-
-  const CustomRectangle = ({ width, height, position }) => {
-    return (
-      <mesh position={position}>
-        <planeGeometry attach="geometry" args={[width, height]} />
-        <meshBasicMaterial attach="material" color="red" />
-      </mesh>
-    );
-  };
-
-  const CustomCircle = ({ position }) => {
-    return (
-      <mesh position={position}>
         <circleGeometry attach="geometry" args={[0.3, 32]} />
         <meshBasicMaterial attach="material" color="blue" />
       </mesh>
@@ -145,18 +152,18 @@ function App() {
 
     const bind = useDrag(({ offset: [x, y] }) => {
       const newPosition = [x / aspect, -y / aspect, 0];
-      positionRef.current = newPosition;
+      rectanglePosRef.current = newPosition;
     });
 
     useFrame(() => {
       if (rectangleRef.current) {
-        rectangleRef.current.position.set(...positionRef.current);
+        rectangleRef.current.position.set(...rectanglePosRef.current);
       }
     });
 
     return (
       <mesh
-        position={positionRef.current}
+        position={rectanglePosRef.current}
         {...bind()}
         ref={rectangleRef}
         onClick={() => {
@@ -200,8 +207,6 @@ function App() {
       </mesh>
     );
   };
-
-
 
   return (
     <div className="canvas-container">
