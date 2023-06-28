@@ -29,7 +29,7 @@ function App() {
       // Gets the position of the current dragged rectangle and sets it as the position of the new rectangle
       const newPosition = rectanglePosRef.current;
       const newRectangle = {
-        width: parsedWidth / 10,
+        width: parsedWidth / 10, //Dividing by 10 as rectangle will be too big if not
         height: parsedHeight / 10,
         position: newPosition,
         apples: 0,
@@ -140,6 +140,7 @@ function App() {
         ref={circleRef}
         onClick={() => onCircleDrop(position)}
       >
+        {/* If circle radius is 2.5 then circle is too big */}
         <circleGeometry attach="geometry" args={[0.3, 32]} />
         <meshBasicMaterial attach="material" color="blue" />
       </mesh>
