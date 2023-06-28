@@ -34,28 +34,7 @@ function App() {
         apples: 0,
       };
 
-      const isOverlapping = rectangles.some((rectangle) => {
-        const rectA = {
-          x1: newPosition[0],
-          y1: newPosition[1],
-          x2: newPosition[0] + newRectangle.width,
-          y2: newPosition[1] + newRectangle.height,
-        };
-
-        const rectB = {
-          x1: rectangle.position[0],
-          y1: rectangle.position[1],
-          x2: rectangle.position[0] + rectangle.width,
-          y2: rectangle.position[1] + rectangle.height,
-        };
-
-        return (
-          rectA.x1 < rectB.x2 &&
-          rectA.x2 > rectB.x1 &&
-          rectA.y1 < rectB.y2 &&
-          rectA.y2 > rectB.y1
-        );
-      });
+      const isOverlapping = rectangles.some(isRectanglesOverlapping(newRectangle));
 
       if (isOverlapping) {
         setError("The new rectangle overlaps with existing rectangles.");
@@ -67,6 +46,29 @@ function App() {
         setError("");
       }
     }
+  };
+
+  const isRectanglesOverlapping = (newRectangle) => (rectangle) => {
+    const rectA = {
+      x1: newRectangle.position[0],
+      y1: newRectangle.position[1],
+      x2: newRectangle.position[0] + newRectangle.width,
+      y2: newRectangle.position[1] + newRectangle.height,
+    };
+
+    const rectB = {
+      x1: rectangle.position[0],
+      y1: rectangle.position[1],
+      x2: rectangle.position[0] + rectangle.width,
+      y2: rectangle.position[1] + rectangle.height,
+    };
+
+    return (
+      rectA.x1 < rectB.x2 &&
+      rectA.x2 > rectB.x1 &&
+      rectA.y1 < rectB.y2 &&
+      rectA.y2 > rectB.y1
+    );
   };
 
   const inputValidation = (width, height) => {
@@ -198,6 +200,8 @@ function App() {
       </mesh>
     );
   };
+
+
 
   return (
     <div className="canvas-container">
