@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useDrag } from "react-use-gesture";
 import Modal from "react-modal";
+import * as THREE from 'three'
 
 import "./App.css";
 
@@ -14,7 +15,9 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [error, setError] = useState("");
+  const [apples, setApples] = useState([]);
   const [rectangles, setRectangles] = useState([]);
+
   const positionRef = useRef([-5.5, 0, 0]);
 
   const handleDimensionSubmit = () => {
@@ -25,17 +28,46 @@ function App() {
     inputValidation(parsedWidth, parsedHeight);
 
     if (error === "") {
+      const newPosition = positionRef.current;
       const newRectangle = {
         width: parsedWidth / 10,
         height: parsedHeight / 10,
-        position: positionRef.current,
+        position: newPosition,
+        apples: 0,
       };
 
-      setRectangles((prevRectangles) => [...prevRectangles, newRectangle]);
-      positionRef.current = [-5.5, 0, 0];
-      setDimensions({ width: 0, height: 0 });
-      setShowModal(false);
-      setError("");
+      const isOverlapping = rectangles.some((rectangle) => {
+        const rectA = {
+          x1: newPosition[0],
+          y1: newPosition[1],
+          x2: newPosition[0] + newRectangle.width,
+          y2: newPosition[1] + newRectangle.height,
+        };
+
+        const rectB = {
+          x1: rectangle.position[0],
+          y1: rectangle.position[1],
+          x2: rectangle.position[0] + rectangle.width,
+          y2: rectangle.position[1] + rectangle.height,
+        };
+
+        return (
+          rectA.x1 < rectB.x2 &&
+          rectA.x2 > rectB.x1 &&
+          rectA.y1 < rectB.y2 &&
+          rectA.y2 > rectB.y1
+        );
+      });
+
+      if (isOverlapping) {
+        setError("The new rectangle overlaps with existing rectangles.");
+      } else {
+        setRectangles((prevRectangles) => [...prevRectangles, newRectangle]);
+        positionRef.current = [-5.5, 0, 0];
+        setDimensions({ width: 0, height: 0 });
+        setShowModal(false);
+        setError("");
+      }
     }
   };
 
@@ -48,8 +80,11 @@ function App() {
       setError("Width and height must be between 10 and 70 (inclusive).");
     } else if (width === height) {
       setError("Width and height cannot be equal");
+    } else {
+      setError("");
     }
   };
+
 
   const Circle = () => {
     const { size, viewport } = useThree();
@@ -57,7 +92,14 @@ function App() {
     const [position, setPosition] = useState([-4.5, 2, 1]);
 
     const bind = useDrag(({ offset: [x, y] }) => {
-      setPosition([x / aspect, -y / aspect, 1]);
+      const newPosition = [x / aspect, -y / aspect, 1];
+      setPosition(newPosition);
+    });
+
+    useFrame(() => {
+      if (circleRef.current) {
+        circleRef.current.position.set(...position);
+      }
     });
 
     return (
@@ -113,16 +155,25 @@ function App() {
   };
 
   const SidePanel = () => {
+
     useFrame(() => {
       if (sidePanelRef.current) {
         sidePanelRef.current.position.set(-8, 0, -2);
       }
     });
+
     return (
-      <mesh ref={sidePanelRef}>
-        <planeGeometry attach="geometry" args={[3.5, 15]} />
-        <meshBasicMaterial attach="material" color="gray" />
-      </mesh>
+      <>
+        <mesh ref={sidePanelRef}>
+          <planeGeometry attach="geometry" args={[3.5, 15]} />
+          <meshBasicMaterial attach="material" color="gray" />
+
+          <mesh onClick={() => console.log("hi")}>
+            <planeGeometry attach="geometry" args={[2.5, 1.0]} />
+            <meshBasicMaterial attach="material" color="pink" />
+          </mesh>
+        </mesh>
+      </>
     );
   };
 
@@ -132,6 +183,7 @@ function App() {
         mainPanelRef.current.position.set(2, 0, -2);
       }
     });
+
     return (
       <mesh ref={mainPanelRef}>
         <planeGeometry attach="geometry" args={[15.0, 15]} />
