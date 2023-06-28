@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useDrag } from "react-use-gesture";
 import Modal from "react-modal";
-import * as THREE from 'three'
+import * as THREE from "three";
 
 import "./App.css";
 
@@ -15,7 +15,7 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [error, setError] = useState("");
-  const [apples, setApples] = useState([]);
+  const [circles, setCircles] = useState([]);
   const [rectangles, setRectangles] = useState([]);
 
   const positionRef = useRef([-5.5, 0, 0]);
@@ -85,6 +85,12 @@ function App() {
     }
   };
 
+  const onCircleDrop = (position) => {
+    const newCircle = {
+      position: position,
+    };
+    setCircles((prevCircles) => [...prevCircles, newCircle]);
+  };
 
   const Circle = () => {
     const { size, viewport } = useThree();
@@ -107,9 +113,9 @@ function App() {
         position={position}
         {...bind()}
         ref={circleRef}
-        onClick={(e) => console.log("click")}
+        onClick={(e) => onCircleDrop(position)}
       >
-        <circleGeometry attach="geometry" args={[0.5, 32]} />
+        <circleGeometry attach="geometry" args={[0.3, 32]} />
         <meshBasicMaterial attach="material" color="blue" />
       </mesh>
     );
@@ -119,7 +125,16 @@ function App() {
     return (
       <mesh position={position}>
         <planeGeometry attach="geometry" args={[width, height]} />
-        <meshBasicMaterial attach="material" color="green" />
+        <meshBasicMaterial attach="material" color="red" />
+      </mesh>
+    );
+  };
+
+  const CustomCircle = ({ position }) => {
+    return (
+      <mesh position={position}>
+        <circleGeometry attach="geometry" args={[0.3, 32]} />
+        <meshBasicMaterial attach="material" color="blue" />
       </mesh>
     );
   };
@@ -155,7 +170,6 @@ function App() {
   };
 
   const SidePanel = () => {
-
     useFrame(() => {
       if (sidePanelRef.current) {
         sidePanelRef.current.position.set(-8, 0, -2);
@@ -167,11 +181,6 @@ function App() {
         <mesh ref={sidePanelRef}>
           <planeGeometry attach="geometry" args={[3.5, 15]} />
           <meshBasicMaterial attach="material" color="gray" />
-
-          <mesh onClick={() => console.log("hi")}>
-            <planeGeometry attach="geometry" args={[2.5, 1.0]} />
-            <meshBasicMaterial attach="material" color="pink" />
-          </mesh>
         </mesh>
       </>
     );
@@ -206,6 +215,9 @@ function App() {
             height={rectangle.height}
             position={rectangle.position}
           />
+        ))}
+        {circles.map((circle, index) => (
+          <CustomCircle key={index} position={circle.position} />
         ))}
       </Canvas>
       <Modal
