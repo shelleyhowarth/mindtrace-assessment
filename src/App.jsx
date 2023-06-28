@@ -1,9 +1,7 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useDrag } from "react-use-gesture";
 import Modal from "react-modal";
-import * as THREE from "three";
-
 import "./App.css";
 
 function App() {
